@@ -79,7 +79,7 @@ func dispatch(method string, b []byte) (any, error) {
 		configMu.RLock()
 		catalog := modelCatalog
 		configMu.RUnlock()
-		return catalog.Get(ctx), nil
+		return provider.ApplyHostModelRules(catalog.Get(ctx), r.Host), nil
 	case pluginabi.MethodAuthParse:
 		var r pluginapi.AuthParseRequest
 		if json.Unmarshal(b, &r) != nil {

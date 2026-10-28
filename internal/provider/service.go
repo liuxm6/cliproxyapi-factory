@@ -101,7 +101,7 @@ func (s *Service) prepare(r Request, stream bool) (Credential, protocol.Route, s
 	if e != nil {
 		return c, protocol.Route{}, "", nil, e
 	}
-	model := strings.TrimPrefix(r.Model, "factory/")
+	model := resolveRequestModel(r.Model)
 	route, e := protocol.Resolve(model)
 	if e != nil {
 		return c, route, model, nil, &StatusError{"unsupported_model", e.Error(), 404, false}
@@ -221,7 +221,7 @@ func (s *Service) Execute(ctx context.Context, r Request) (pluginapi.ExecutorRes
 	if format == "" {
 		format = r.SourceFormat
 	}
-	resolved, errRoute := protocol.Resolve(strings.TrimPrefix(r.Model, "factory/"))
+	resolved, errRoute := protocol.Resolve(resolveRequestModel(r.Model))
 	useStream := errRoute == nil && resolved.Format != format && (resolved.Format == "claude" || resolved.Format == "openai-response")
 	c, route, model, b, e := s.prepare(r, useStream)
 	if e != nil {
