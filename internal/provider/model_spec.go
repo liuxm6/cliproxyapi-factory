@@ -99,7 +99,7 @@ func (s ModelSpec) permitsEffort(level string) bool {
 	return false
 }
 func (s ModelSpec) info() pluginapi.ModelInfo {
-	m := pluginapi.ModelInfo{ID: "factory/" + s.ID, Object: "model", OwnedBy: "factory", Type: "factory", DisplayName: s.Name, Name: s.ID, ContextLength: s.Context, MaxCompletionTokens: s.Tokens, SupportedInputModalities: append([]string(nil), s.Input...), SupportedOutputModalities: []string{"text"}, SupportedParameters: []string{"stream"}}
+	m := pluginapi.ModelInfo{ID: "factory/" + s.ID, Object: "model", OwnedBy: "factory", Type: "factory", DisplayName: displayNameFor(s), Name: s.ID, ContextLength: s.Context, MaxCompletionTokens: s.Tokens, SupportedInputModalities: append([]string(nil), s.Input...), SupportedOutputModalities: []string{"text"}, SupportedParameters: []string{"stream"}}
 	if s.Context > 0 || s.Reasoning {
 		m.SupportedParameters = append(m.SupportedParameters, "tools", "tool_choice")
 	}

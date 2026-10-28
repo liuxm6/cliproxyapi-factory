@@ -108,6 +108,34 @@ func TestResolveRequestModel(t *testing.T) {
 	}
 }
 
+func TestDisplayNameFor(t *testing.T) {
+	cases := []struct {
+		spec ModelSpec
+		want string
+	}{
+		{ModelSpec{ID: "claude-opus-4-6", Name: "Claude Opus 4.6 (Factory)"}, "Claude Opus 4.6 (Factory)"},
+		{ModelSpec{ID: "claude-fable-5.1", Name: "claude-fable-5.1"}, "Claude Fable 5.1 (Factory)"},
+		{ModelSpec{ID: "claude-haiku-5-5", Name: "claude-haiku-5-5"}, "Claude Haiku 5.5 (Factory)"},
+		{ModelSpec{ID: "claude-opus-4-6-1m", Name: "claude-opus-4-6-1m"}, "Claude Opus 4.6 1M (Factory)"},
+		{ModelSpec{ID: "gpt-6-astra", Name: "gpt-6-astra"}, "GPT-6 Astra (Factory)"},
+		{ModelSpec{ID: "gpt-5.4-mini-fast", Name: "gpt-5.4-mini-fast"}, "GPT-5.4 Mini Fast (Factory)"},
+		{ModelSpec{ID: "glm-5.2-fast", Name: "glm-5.2-fast"}, "GLM-5.2 Fast (Factory)"},
+		{ModelSpec{ID: "deepseek-v4.1-flash-1017", Name: "deepseek-v4.1-flash-1017"}, "DeepSeek V4.1 Flash 1017 (Factory)"},
+		{ModelSpec{ID: "minimax-m3.1-flash", Name: "minimax-m3.1-flash"}, "MiniMax M3.1 Flash (Factory)"},
+		{ModelSpec{ID: "kimi-k3", Name: "kimi-k3"}, "Kimi K3 (Factory)"},
+		{ModelSpec{ID: "nemotron-3.5-super", Name: "nemotron-3.5-super"}, "Nemotron 3.5 Super (Factory)"},
+		{ModelSpec{ID: "gpt-5.4", Name: "GPT-5.4"}, "GPT-5.4 (Factory)"},
+		{ModelSpec{ID: "deepseek-v4-pro", Name: "DeepSeek V4 Pro (Factory Core)"}, "DeepSeek V4 Pro (Factory Core)"},
+		{ModelSpec{ID: "glm-5.3", Name: "glm-5.3"}, "GLM-5.3 (Factory)"},
+		{ModelSpec{ID: "claude-fable-5.1", Name: ""}, "Claude Fable 5.1 (Factory)"},
+	}
+	for _, c := range cases {
+		if got := displayNameFor(c.spec); got != c.want {
+			t.Fatalf("displayNameFor(%q/%q) = %q, want %q", c.spec.ID, c.spec.Name, got, c.want)
+		}
+	}
+}
+
 func TestMatchWildcard(t *testing.T) {
 	cases := []struct {
 		pattern, value string
