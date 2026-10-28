@@ -18,7 +18,7 @@ func registration() any {
 		"schema_version": pluginabi.SchemaVersion,
 		"metadata": pluginapi.Metadata{
 			Name:             "Factory provider",
-			Version:          "0.1.2",
+			Version:          "0.1.3",
 			Author:           "leewhite97",
 			GitHubRepository: "https://github.com/leewhite97/cliproxyapi-factory",
 		},
