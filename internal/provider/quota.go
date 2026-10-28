@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginapi"
+	"io"
 	"math"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -77,6 +79,45 @@ func ConvertBillingLimitsToQuota(raw []byte, now time.Time) (pluginapi.QuotaFetc
 	return pluginapi.QuotaFetchResponse{Groups: groups}, nil
 }
 
+// quotaHTTP dials the billing endpoint in-process through the credential's
+// proxy. The host Do callback only ever sees the OAuth-session/global proxy,
+// never the credential proxy_url, so a quota request routed through it keeps
+// hitting the edge IP block that the executor path avoids. quota_proxy_url
+// wins over proxy_url so inference can stay direct while quota goes proxied.
+func quotaHTTP(ctx context.Context, c Credential, rawurl string, headers http.Header) (int, []byte, error) {
+	proxy := c.QuotaProxyURL
+	if proxy == "" {
+		proxy = c.ProxyURL
+	}
+	if proxy == "" || proxy == "direct" {
+		return 0, nil, fmt.Errorf("no credential proxy configured")
+	}
+	u, e := url.Parse(proxy)
+	if e != nil {
+		return 0, nil, fmt.Errorf("invalid credential proxy: %w", e)
+	}
+	if u.Scheme == "socks5h" {
+		// net/http speaks socks5 with remote DNS resolution natively.
+		u.Scheme = "socks5"
+	}
+	client := &http.Client{
+		Transport: &http.Transport{Proxy: http.ProxyURL(u)},
+		Timeout:   20 * time.Second,
+	}
+	req, e := http.NewRequestWithContext(ctx, http.MethodGet, rawurl, nil)
+	if e != nil {
+		return 0, nil, e
+	}
+	req.Header = headers
+	resp, e := client.Do(req)
+	if e != nil {
+		return 0, nil, e
+	}
+	defer resp.Body.Close()
+	body, e := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	return resp.StatusCode, body, e
+}
+
 func (s *Service) FetchQuota(ctx context.Context, callbackID string, storageJSON []byte) (pluginapi.QuotaFetchResponse, error) {
 	c, err := credential(storageJSON)
 	if err != nil {
@@ -91,9 +132,13 @@ func (s *Service) FetchQuota(ctx context.Context, callbackID string, storageJSON
 	headers.Set("User-Agent", "factory-cli/0.162.1")
 
 	url := c.Endpoint + "/api/billing/limits"
-	statusCode, _, body, err := s.Host.Do(ctx, "GET", callbackID, url, headers, nil)
+	statusCode, body, err := quotaHTTP(ctx, c, url, headers)
 	if err != nil {
-		return pluginapi.QuotaFetchResponse{}, fmt.Errorf("factory: billing limits request failed: %w", err)
+		var hostErr error
+		statusCode, _, body, hostErr = s.Host.Do(ctx, "GET", callbackID, url, headers, nil)
+		if hostErr != nil {
+			return pluginapi.QuotaFetchResponse{}, fmt.Errorf("factory: billing limits request failed: %w", hostErr)
+		}
 	}
 
 	if statusCode != http.StatusOK {

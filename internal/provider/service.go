@@ -65,6 +65,11 @@ type Credential struct {
 	Endpoint string `json:"apiEndpoint,omitempty"`
 	Disabled bool   `json:"disabled,omitempty"`
 	Label    string `json:"label,omitempty"`
+	// proxy_url is honored by the host only on executor traffic. quota_proxy_url
+	// is plugin-local: FetchQuota dials it directly because the host callback
+	// never receives the credential proxy (upstream host gap).
+	ProxyURL      string `json:"proxy_url,omitempty"`
+	QuotaProxyURL string `json:"quota_proxy_url,omitempty"`
 }
 type StatusError struct {
 	Code, Message string

@@ -198,9 +198,18 @@
     const bucketGroup = cardEl.querySelector(".bucket-group");
 
     try {
-      const quota = await api("credentials/quota/fetch", {
-        body: { auth_index: authIndex },
-      });
+      let quota;
+      try {
+        quota = await api("plugins/factory/quota", {
+          body: { auth_index: authIndex },
+        });
+      } catch (err) {
+        // CPA v8.0.44 移除了 credentials/quota/fetch 路由；旧版 CPA 只有它，按序回退
+        if (!/404/.test(err.message)) throw err;
+        quota = await api("credentials/quota/fetch", {
+          body: { auth_index: authIndex },
+        });
+      }
       if (curGen !== generation) return;
 
       const sub = quota.subscription || {};
